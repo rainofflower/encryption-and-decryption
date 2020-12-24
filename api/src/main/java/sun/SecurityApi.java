@@ -3,6 +3,7 @@ package sun;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
+import java.security.MessageDigest;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Map;
@@ -38,6 +39,18 @@ public class SecurityApi {
          * java.security文件内容
          */
         String property = Security.getProperty("security.provider.2");
-        System.out.printf(property);
+        System.out.println(property);
+
+        System.out.println("------");
+        System.out.println(Security.getProperty("security.provider.1"));
+        Provider sunRsaSign = Security.getProvider("SunRsaSign");
+        System.out.println(provider);
+        //插入提供者不影响property
+        Security.insertProviderAt(sunRsaSign, 1);
+        System.out.println(Security.getProperty("security.provider.1"));
+        //直接修改property会修改内存中已加载的property信息，不会写入到文件
+        Security.setProperty("security.provider.1", "sun.security.rsa.SunRsaSign");
+        System.out.println(Security.getProperty("security.provider.1"));
+
     }
 }
