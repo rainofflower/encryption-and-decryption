@@ -17,11 +17,14 @@ public class MessageDigestApi {
         Provider provider = digest.getProvider();
         System.out.println(provider);
 //        digest.update(input);
+        //更新并获取摘要
         byte[] output = digest.digest(input);
 //        String s = new String(output);
 //        System.out.println(s);
 //        digest.reset();
+        //更新摘要
         digest.update("sha1".getBytes());
+        //获取摘要结果
         byte[] output2 = digest.digest();
         System.out.println(MessageDigest.isEqual(output, output2));
     }

@@ -21,6 +21,7 @@ public class DigestInputStreamApi {
         DigestInputStream digestInputStream = new DigestInputStream(new FileInputStream(file), md);
         //读取文件内容并更新摘要
         while(digestInputStream.read() != -1);
+        //获取摘要
         byte[] output = md.digest();
         digestInputStream.close();
 
