@@ -5,6 +5,8 @@ import org.junit.Test;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.DESKeySpec;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
@@ -50,14 +52,21 @@ public class KeyApi {
      * @throws NoSuchAlgorithmException
      */
     @Test
-    public void test03() throws NoSuchAlgorithmException {
+    public void test02() throws NoSuchAlgorithmException, InvalidKeyException, InvalidKeySpecException {
         SecureRandom secureRandom = new SecureRandom();
         KeyGenerator keyGenerator = KeyGenerator.getInstance("DES");
         //初始化 KeyGenerator
         keyGenerator.init(secureRandom);
         //生成 SecretKey
         SecretKey secretKey = keyGenerator.generateKey();
+        //密钥编码字节数组
+        byte[] keyEncoded = secretKey.getEncoded();
+        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(keyGenerator.getAlgorithm());
+        DESKeySpec keySpec = new DESKeySpec(keyEncoded);
+        SecretKey key = keyFactory.generateSecret(keySpec);
+
     }
+
 
     /**
      * AlgorithmParameterGenerator
@@ -79,7 +88,7 @@ public class KeyApi {
     }
 
     @Test
-    public void test02() throws NoSuchAlgorithmException {
+    public void keyPairTest() throws NoSuchAlgorithmException {
         //KeyPair
         //实例化KeyPairGenerator对象
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("DSA");
