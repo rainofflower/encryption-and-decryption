@@ -14,6 +14,9 @@ import java.util.Map;
 @Slf4j
 public class SecurityApi {
 
+    /**
+     * 下方代码打印结果见resources/Provider-List.txt
+     */
     @Test
     public void test01(){
         //遍历目前环境中的安全提供者

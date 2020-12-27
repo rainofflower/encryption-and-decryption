@@ -26,6 +26,18 @@
             <artifactId>logback-classic</artifactId>
             <version>1.2.3</version>
         </dependency>
+        <!--<dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>com.springsource.org.bouncycastle.jce</artifactId>
+            <version></version>
+        </dependency>-->
+        <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.60</version>
+        </dependency>
+
     </dependencies>
 
 
