@@ -1,5 +1,6 @@
 package sun;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -16,8 +17,14 @@ import java.util.Arrays;
 
 /**
  * DES和AES算法提供者依赖于外部实现（jdk未实现），因此需要加入外部实现
+ * 扩充算法支持方式：
+ * 1、配置方式
  * 这里使用 bouncycastle 的实现，添加maven依赖后，还需在jre的java.security中加入
  * security.provider.11=org.bouncycastle.jce.provider.BouncyCastleProvider
+ *
+ * 2、调用方式
+ * 在使用前调用 Security.addProvider(new BouncyCastleProvider()); 即可
+ * 见下方 test03
  *
  * PrivateKey
  * PublicKey
@@ -75,7 +82,8 @@ public class KeyApi {
      * @throws IOException
      */
     @Test
-    public void test() throws NoSuchAlgorithmException, IOException {
+    public void test03() throws NoSuchAlgorithmException, IOException {
+        Security.addProvider(new BouncyCastleProvider());
         //指定DES算法实例化AlgorithmParameterGenerator对象
         AlgorithmParameterGenerator parameterGenerator = AlgorithmParameterGenerator.getInstance("DES");
         //初始化
