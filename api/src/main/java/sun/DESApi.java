@@ -36,8 +36,12 @@ public class DESApi {
         KeyGenerator keyGenerator = KeyGenerator.getInstance(KEY_ALGORITHM);
         keyGenerator.init(64);
         SecretKey secretKey = keyGenerator.generateKey();
-        //编码
         byte[] encoded = secretKey.getEncoded();
+        /**
+         * 以下使用Base64编解码，主要是模拟与合作公司/银行对接时对密钥的处理
+         * 一般加密算法会先和银行商定好，然后再接收对方密钥，密钥一般以Base64编码或十六进制编码
+         */
+        //编码密钥再编码成Base64字符串形式
         String base64Key = Base64.encodeBase64String(encoded);
         System.out.println("密钥base64编码:"+base64Key);
         String data = "DES";
@@ -47,6 +51,7 @@ public class DESApi {
         //加密
         byte[] cipherBytes = cipher.doFinal(data.getBytes());
         //System.out.println("密文base64编码:"+Base64.encodeBase64String(cipherBytes));
+        //解码Base64编码的密钥
         byte[] decodeKeyBytes = Base64.decodeBase64(base64Key);
         SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
         DESKeySpec keySpec = new DESKeySpec(decodeKeyBytes);
