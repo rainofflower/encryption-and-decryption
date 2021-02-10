@@ -2,7 +2,6 @@ package sun;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
-import sun.security.util.SecurityConstants;
 
 import java.net.SocketPermission;
 
@@ -31,7 +30,7 @@ public class SecurityManagerApi {
          * };
          */
         SocketPermission socketPermission = new SocketPermission("127.0.0.1" + ":" + 80,
-                SecurityConstants.SOCKET_CONNECT_ACTION);
+                "connect");
         securityManager.checkPermission(socketPermission);
         log.info("--context:{}--checkPermission:{}",securityContext.toString(),socketPermission.toString());
         Thread thread = new Thread(() -> {
