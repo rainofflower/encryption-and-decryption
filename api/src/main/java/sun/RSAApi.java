@@ -1,37 +1,35 @@
 package sun;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Hex;
+import org.bouncycastle.jcajce.provider.asymmetric.RSA;
+import org.junit.Assert;
 import org.junit.Test;
+import util.AESUtils;
+import util.KeyUtils;
+import util.RSAUtils;
 
-import javax.crypto.Cipher;
-import java.security.KeyFactory;
+import javax.crypto.SecretKey;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 
 /**
- * RSA算法加解密
+ * RSA算法
+ * -加解密
+ * -数字签名
  * @author YangHui
  * @date 2021-02-12 19:28
  */
 public class RSAApi {
 
-    public static final String KEY_ALGORITHM = "RSA";
-
-    public static final int KEY_SIZE = 1024;
-
+    /**
+     * RSA加解密数据
+     * @throws Exception
+     */
     @Test
     public void test() throws Exception{
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(KEY_ALGORITHM);
-        keyPairGenerator.initialize(KEY_SIZE);
-        KeyPair keyPair = keyPairGenerator.genKeyPair();
+        KeyPair keyPair = RSAUtils.generateKey();
         RSAPublicKey publicKey = (RSAPublicKey)keyPair.getPublic();
         RSAPrivateKey privateKey = (RSAPrivateKey)keyPair.getPrivate();
         byte[] publicKeyEncoded = publicKey.getEncoded();
@@ -42,84 +40,81 @@ public class RSAApi {
         System.out.println("===甲 to 乙===");
         String data1 = "账号xxx";
         System.out.println("原数据:"+data1);
-        byte[] encryptByPublicKey = encryptByPublicKey(data1.getBytes(), publicKeyEncoded);
+        byte[] encryptByPublicKey = RSAUtils.encryptByPublicKey(data1.getBytes(), publicKeyEncoded);
         System.out.println("加密后:"+Base64.encodeBase64String(encryptByPublicKey));
-        byte[] decryptByPrivateKey = decryptByPrivateKey(encryptByPublicKey, privateKeyEncoded);
+        byte[] decryptByPrivateKey = RSAUtils.decryptByPrivateKey(encryptByPublicKey, privateKeyEncoded);
         String decrypt1 = new String(decryptByPrivateKey);
         System.out.println("解密后:"+decrypt1);
 
         System.out.println("===乙 to 甲===");
         String data2 = "got it";
         System.out.println("原数据:"+data2);
-        byte[] encryptByPrivateKey2 = encryptByPrivateKey(data2.getBytes(), privateKeyEncoded);
+        byte[] encryptByPrivateKey2 = RSAUtils.encryptByPrivateKey(data2.getBytes(), privateKeyEncoded);
         System.out.println("加密后:"+Base64.encodeBase64String(encryptByPrivateKey2));
-        byte[] decryptByPrivateKey2 = decryptByPublicKey(encryptByPrivateKey2, publicKeyEncoded);
+        byte[] decryptByPrivateKey2 = RSAUtils.decryptByPublicKey(encryptByPrivateKey2, publicKeyEncoded);
         String decrypt2 = new String(decryptByPrivateKey2);
         System.out.println("解密后:"+decrypt2);
     }
 
     /**
-     * 公钥加密
-     * @param data
-     * @param key
-     * @return
+     * RSA签名、RSA、AES加解密结合运用
+     *
+     * 1、假设乙生成公私钥，并将公钥公布给甲
+     *
+     * 2、甲生成后续数据加密用的密钥，通过RSA算法使用乙公布的公钥加密密钥，发送给乙
+     *
+     * 3、乙通过RSA算法使用私钥解密甲发送过来的密钥，得到数据加密用的对称密钥
+     *
+     * 4、乙先对向甲发送的数据做签名处理（通过私钥使用RSA算法签名），
+     * 然后将得到的签名值与原数据拼接在一起（此处是将签名放在头部），
+     * 再对整段数据通过对称密钥使用对称加密算法加密
+     *
+     * 5、甲对收到的数据先做解密处理（密钥使用AES解密），然后分别取出原数据和乙的签名值，
+     * 再通过公钥使用RSA算法，以原数据、乙的签名作为参数，验证数据
+     *
      * @throws Exception
      */
-    public static byte[] encryptByPublicKey(byte[] data, byte[] key) throws Exception {
-        X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(key);
-        KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
-        PublicKey publicKey = keyFactory.generatePublic(x509EncodedKeySpec);
-        Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-        return cipher.doFinal(data);
-    }
+    @Test
+    public void test2() throws Exception{
+        //生成非对称加密的密钥对
+        KeyPair keyPair = RSAUtils.generateKey();
+        RSAPublicKey publicKey = (RSAPublicKey)keyPair.getPublic();
+        RSAPrivateKey privateKey = (RSAPrivateKey)keyPair.getPrivate();
+        byte[] publicKeyEncoded = publicKey.getEncoded();
+        byte[] privateKeyEncoded = privateKey.getEncoded();
+        String publicKeyString = KeyUtils.getKeyHexString(publicKeyEncoded);
+        String privateKeyString = KeyUtils.getKeyHexString(privateKeyEncoded);
+        System.out.println("公钥:"+ publicKeyString);
+        System.out.println("私钥:"+ privateKeyString);
+        System.out.println("===甲用公钥使用RSA算法加密AES算法要使用到的密钥，传输给乙===");
+        //生成对称加密的密钥
+        SecretKey secretKey = AESUtils.generateKey();
+        String secretKeyHexStr = Hex.encodeHexString(secretKey.getEncoded());
+        System.out.println("甲生成的密钥:"+secretKeyHexStr);
+        byte[] bytes = RSAUtils.encryptByPublicKey(secretKeyHexStr.getBytes(), KeyUtils.getKey(publicKeyString));
+        System.out.println("甲使用公钥加密后的密钥:"+Hex.encodeHexString(bytes));
+        byte[] key = RSAUtils.decryptByPrivateKey(bytes, KeyUtils.getKey(privateKeyString));
+        String keyStr = new String(key);
+        System.out.println("乙使用私钥解密后的密钥:"+keyStr);
+        String data = "it's my secret";
+        System.out.println("乙向甲发送的原数据:"+data);
+        byte[] sign = RSAUtils.sign(data.getBytes(), KeyUtils.getKey(privateKeyString));
+        String signStr = Hex.encodeHexString(sign);
+        System.out.println("乙发送数据的签名:"+signStr);
+        data = signStr + data;
+        byte[] encryptData = AESUtils.encrypt(data.getBytes(), KeyUtils.getKey(keyStr));
+        System.out.println("乙将要发送的加密后的数据:"+Hex.encodeHexString(encryptData));
 
-    /**
-     * 私钥加密
-     * @param data
-     * @param key
-     * @return
-     * @throws Exception
-     */
-    public static byte[] encryptByPrivateKey(byte[] data, byte[] key) throws Exception{
-        PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(key);
-        KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
-        PrivateKey privateKey = keyFactory.generatePrivate(pkcs8EncodedKeySpec);
-        Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
-        cipher.init(Cipher.ENCRYPT_MODE, privateKey);
-        return cipher.doFinal(data);
-    }
+        byte[] decryptData = AESUtils.decrypt(encryptData, KeyUtils.getKey(secretKeyHexStr));
+        System.out.println("甲收到乙发送的数据:"+Hex.encodeHexString(decryptData));
+        String receiveData = new String(decryptData);
+        String signStr2 = receiveData.substring(0, RSAUtils.KEY_SIZE / 4);
+        String data2 = receiveData.substring(RSAUtils.KEY_SIZE / 4);
+        System.out.println("乙的签名:"+signStr2);
+        System.out.println("乙发送的原始数据:"+data2);
+        boolean verify = RSAUtils.verify(data2.getBytes(), Hex.decodeHex(signStr2), KeyUtils.getKey(publicKeyString));
+        Assert.assertTrue(verify);
 
-    /**
-     * 公钥解密
-     * @param data
-     * @param key
-     * @return
-     * @throws Exception
-     */
-    public static byte[] decryptByPublicKey(byte[] data, byte[] key) throws Exception{
-        X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(key);
-        KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
-        PublicKey publicKey = keyFactory.generatePublic(x509EncodedKeySpec);
-        Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
-        cipher.init(Cipher.DECRYPT_MODE, publicKey);
-        return cipher.doFinal(data);
-    }
-
-    /**
-     * 私钥解密
-     * @param data
-     * @param key
-     * @return
-     * @throws Exception
-     */
-    public static byte[] decryptByPrivateKey(byte[] data, byte[] key) throws Exception{
-        PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(key);
-        KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
-        PrivateKey privateKey = keyFactory.generatePrivate(pkcs8EncodedKeySpec);
-        Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm());
-        cipher.init(Cipher.DECRYPT_MODE, privateKey);
-        return cipher.doFinal(data);
     }
 
 }
