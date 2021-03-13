@@ -104,7 +104,7 @@ public class RSAUtils {
     }
 
     /**
-     * 校验
+     * 验证
      * @param data
      * @param sign
      * @param key

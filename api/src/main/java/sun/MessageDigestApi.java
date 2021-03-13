@@ -9,6 +9,9 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.security.*;
 
 /**
@@ -57,6 +60,14 @@ public class MessageDigestApi {
         System.out.println(hexString);
         String md5Hex = DigestUtils.md5Hex(str);
         Assert.assertEquals(md5Hex, hexString);
+    }
+
+    @Test
+    public void testFileMD5() throws IOException {
+        FileInputStream fileInputStream = new FileInputStream("H:\\Google Chrome\\Downloads\\202102011612165914614.exe");
+        String hexString = DigestUtils.md5Hex(fileInputStream);
+        System.out.println(hexString);
+        Assert.assertEquals("3E65CDA186A19BCBD6B6F30C2019BC69".toLowerCase(), hexString);
     }
 
     @Test
